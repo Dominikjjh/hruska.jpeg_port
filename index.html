@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hruska.jpeg_portfolio</title>
+
+        <head>
+    <link rel="stylesheet" href="css/mobil.css">
+    </head>
+
+    
+    
+</head>
+<head>
+    <div class="header">hruska.jpeg</div>
+    <div class="contact-info">
+        <img src="icons/6929237_instagram_icon.png" alt="Instagram"> hruska.jpeg |
+        <img src="icons/134146_mail_email_icon.png" alt="Email"> hruska.d07@seznam.cz |
+        <img src="icons/8665646_phone_communication_icon.png" alt="Telefon"> 608848444
+    </div>
+
+    <!-- Tlačítko pro zobrazení alba -->
+    <button onclick="openAlbumPopup()" class="nav-button">
+    Alba
+    </button>
+
+    <div id="overlay" style="display: none;"></div>
+
+    <!-- Popup okno pro výběr alba -->
+    <div id="albumPopup" style="display: none;">
+        <div class="popup-content">
+            <span onclick="closeAlbumPopup()" class="close-btn">&times;</span>
+            <h2>Vyber album:</h2>
+            <button onclick="openAlbum('festival.php')">Festival</button>
+            <button onclick="openAlbum('svatba.php')">Svatba</button>
+            <button onclick="openAlbum('priroda.php')">Příroda</button>
+            <button onclick="openAlbum('cipa.php')">Cipa</button>
+            <button onclick="openAlbum('cipea.php')">Cipa</button>
+            <button onclick="openAlbum('cieeepa.php')">Cipa</button>
+            <button onclick="openAlbum('cipddsa.php')">Cipa</button>
+            <button onclick="openAlbum('cipa.php')">Cipa</button>
+            <button onclick="openAlbum('cipsa.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+            <button onclick="openAlbum('cipadsssdsd.php')">Cipa</button>
+        </div>
+        <div class="hidden-album">
+    <h3>Najít skryté album:</h3>
+    <input type="text" id="hiddenAlbumCode" placeholder="Zadejte kód alba" style="padding: 10px; font-size: 16px;">
+    <button onclick="findHiddenAlbum()" style="padding: 10px; font-size: 16px; margin-top: 10px;">Otevřít album</button>
+</div>
+<div id="errorMessage" style="color: red; font-size: 16px; height: 24px; margin-top: 10px;"></div>
+
+
+    </div>
+  
+
+    <div class="gallery"></div>
+
+    <div id="fullscreenModal" class="fullscreen" style="display: none;">
+        <a id="downloadBtn" class="download-btn" download><img src="icons/8542038_download_data_icon.svg" alt="Download"></a>
+        <img id="fullscreenImg" src="">
+        <img class="close-btn" src="icons/4879885_close_cross_delete_remove_icon.svg" alt="Close" onclick="closeFullscreen()">
+    </div>
+
+
+
+    <script>
+        async function loadGallery() {
+    const dir = "fotky";
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+    
+    try {
+        const response = await fetch(dir);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/html");
+        const files = [...doc.querySelectorAll("a")] 
+            .map(a => a.getAttribute("href"))
+            .filter(file => allowedExtensions.includes(file.split('.').pop().toLowerCase()));
+
+        let images = await Promise.all(files.map(async file => {
+            const filePath = `${dir}/${file}`;
+            const response = await fetch(filePath, { method: 'HEAD' });
+            const timestamp = new Date(response.headers.get("Last-Modified")).getTime();
+            
+            return { path: filePath, name: file, timestamp };
+        }));
+        
+        images.sort((a, b) => {
+            const isPinA = a.name.match(/pin(\d*)/i) ? parseInt(a.name.match(/pin(\d*)/i)[1] || 0) : Number.MAX_VALUE;
+            const isPinB = b.name.match(/pin(\d*)/i) ? parseInt(b.name.match(/pin(\d*)/i)[1] || 0) : Number.MAX_VALUE;
+            return isPinA - isPinB || b.timestamp - a.timestamp;
+        });
+
+        const gallery = document.querySelector(".gallery");
+        images.forEach(async image => {
+            const img = new Image();
+            img.src = image.path + "?resize=small";
+            img.alt = "Fotografie";
+            img.loading = "lazy";
+            
+            await new Promise(resolve => img.onload = resolve);
+            const className = img.width > img.height ? 'wide' : '';
+            
+            const container = document.createElement("div");
+            container.className = `photo-container ${className}`;
+            container.onclick = () => openFullscreen(image.path);
+            container.appendChild(img);
+            
+            gallery.appendChild(container);
+        });
+    } catch (error) {
+        console.error("Error loading gallery:", error);
+    }
+}
+
+function openFullscreen(imagePath) {
+    const fullscreenContainer = document.createElement("div");
+    fullscreenContainer.className = "fullscreen";
+    fullscreenContainer.innerHTML = `<img src="${imagePath}" alt="Fullscreen Image">`;
+    fullscreenContainer.onclick = () => fullscreenContainer.remove();
+    document.body.appendChild(fullscreenContainer);
+}
+
+window.onload = loadGallery;
+
+
+    function openFullscreen(src) {
+            document.getElementById("fullscreenImg").src = src;
+            document.getElementById("fullscreenModal").style.display = "flex";
+            document.getElementById("downloadBtn").href = src;
+        }
+
+        function closeFullscreen() {
+            document.getElementById("fullscreenModal").style.display = "none";
+        }
+
+        function openAlbumPopup() {
+    document.getElementById("albumPopup").style.display = "block";
+    document.getElementById("overlay").style.display = "block";
+}
+
+function closeAlbumPopup() {
+    document.getElementById("albumPopup").style.display = "none";
+    document.getElementById("overlay").style.display = "none";
+    clearError(); // Skryje chybovou zprávu
+
+}
+
+
+        function openAlbum(page) {
+            window.location.href = page;
+        }
+        
+
+        function findHiddenAlbum() {
+    const code = document.getElementById("hiddenAlbumCode").value.trim();
+    const errorMsg = document.getElementById("errorMsg");
+
+    if (code) {
+        const albumUrl = code + ".php";
+
+        fetch(albumUrl, { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = albumUrl;
+                } else {
+                    showError("Album neexistuje!");
+                }
+            })
+            .catch(() => {
+                showError("Album neexistuje!");
+            });
+    } else {
+        showError("Zadejte kód alba!");
+    }
+}
+
+function showError(message) {
+    const errorElement = document.getElementById("errorMessage");
+    errorElement.textContent = message;
+}
+
+function clearError() {
+    const errorElement = document.getElementById("errorMessage");
+    errorElement.textContent = ""; // Vymaže text, ale prostor zůstane
+}
+document.getElementById("hiddenAlbumCode").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") { 
+        event.preventDefault(); // Zabrání tomu, aby Enter odeslal formulář
+        findHiddenAlbum(); // Spustí funkci pro otevření alba
+    }
+});
+
+
+
+
+// Schová chybu při psaní
+document.getElementById("hiddenAlbumCode").addEventListener("input", clearError);
+
+
+
+    </script>
+    </body>
+</html>
