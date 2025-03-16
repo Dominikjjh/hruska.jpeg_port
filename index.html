@@ -72,52 +72,42 @@
 
 
     <script>
-        async function loadGallery() {
-    const dir = "fotky";
-    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        const repoOwner = "Dominikjjh"; // Tvůj GitHub username
+const repoName = "hruska.jpeg_port"; // Název repozitáře
+const folderPath = "fotky"; // Složka, kde jsou obrázky
+const branch = "main"; // Hlavní větev (např. main, master)
+
+async function loadGallery() {
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}?ref=${branch}`;
     
     try {
-        const response = await fetch(dir);
-        const text = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, "text/html");
-        const files = [...doc.querySelectorAll("a")] 
-            .map(a => a.getAttribute("href"))
-            .filter(file => allowedExtensions.includes(file.split('.').pop().toLowerCase()));
+        const response = await fetch(apiUrl);
+        const data = await response.json();
 
-        let images = await Promise.all(files.map(async file => {
-            const filePath = `${dir}/${file}`;
-            const response = await fetch(filePath, { method: 'HEAD' });
-            const timestamp = new Date(response.headers.get("Last-Modified")).getTime();
-            
-            return { path: filePath, name: file, timestamp };
-        }));
-        
-        images.sort((a, b) => {
-            const isPinA = a.name.match(/pin(\d*)/i) ? parseInt(a.name.match(/pin(\d*)/i)[1] || 0) : Number.MAX_VALUE;
-            const isPinB = b.name.match(/pin(\d*)/i) ? parseInt(b.name.match(/pin(\d*)/i)[1] || 0) : Number.MAX_VALUE;
-            return isPinA - isPinB || b.timestamp - a.timestamp;
-        });
+        if (!Array.isArray(data)) throw new Error("Chybná odpověď API!");
+
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+        const images = data
+            .filter(file => allowedExtensions.includes(file.name.split('.').pop().toLowerCase())) // Filtruje obrázky
+            .map(file => file.download_url); // Získá URL obrázků
 
         const gallery = document.querySelector(".gallery");
-        images.forEach(async image => {
+
+        images.forEach(imagePath => {
             const img = new Image();
-            img.src = image.path + "?resize=small";
+            img.src = imagePath;
             img.alt = "Fotografie";
             img.loading = "lazy";
-            
-            await new Promise(resolve => img.onload = resolve);
-            const className = img.width > img.height ? 'wide' : '';
-            
+
             const container = document.createElement("div");
-            container.className = `photo-container ${className}`;
-            container.onclick = () => openFullscreen(image.path);
+            container.className = "photo-container";
+            container.onclick = () => openFullscreen(imagePath);
             container.appendChild(img);
-            
+
             gallery.appendChild(container);
         });
     } catch (error) {
-        console.error("Error loading gallery:", error);
+        console.error("Chyba při načítání galerie:", error);
     }
 }
 
